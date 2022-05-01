@@ -7,30 +7,51 @@
     <title>calendar</title>
     <link rel="stylesheet" href="./calender.css">
     <script src="https://unpkg.com/vue@3"></script>
-    <script src="https://unpkg.com/vue-router@4"></script>
 </head>
 
 <body>
     <div id="app">
         <div class="wrapper">
-            <div class="toolbar">
-                <div class="previous" @click="previousMonth"><strong>&lt;</strong></div>
-                <router-link to = "/year" class = "router-link-active">
-                    <div class="current"><strong>{{ currentDate }}</strong></div>
-                </router-link>
-                <div class="next" @click="nextMonth"><strong>&gt;</strong></div>
+            <div class = "picker" @click = "isClickPicker=true"><input type = "text" :value = "valueDate" size = "10"></div>
+            <div class = "main">
+            <div v-show = "!isClickToolBar && isClickPicker">
+                <div class="toolbar">
+                    <div class="previous" @click="previousMonth"><strong>&lt;</strong></div>
+                    <div class="current" @click = "chooseMonth"><strong>{{ currentDate }}</strong></div>
+                    <div class="next" @click="nextMonth"><strong>&gt;</strong></div>
+                </div>
+                <div class="week">
+                    <div class="week-item" v-for="item of weekList" :key="item.id">{{ item }}</div>
+                </div>
+                <div class="day">
+                    <div class="item" v-for="(item, index) of calendarList" :key="item.id" :class="[item.disable ? 'disabled' : '', {today: item.isToday}, {checked: item.isChecked}]" @click = "checkDate(item)">
+                        {{ item.date }}
+                    </div>
+                </div>                
             </div>
-            <div class="week">
-                <div class="week-item" v-for="item of weekList" :key="item.id">{{ item }}</div>
-            </div>
-            <div class="day">
-                <div class="item" v-for="(item, index) of calendarList" :key="item.id" :class="[item.disable ? 'disabled' : '', {today: item.isToday}, {checked: item.isChecked}]" @click = "check(item)">
-                    {{ item.date }}
+
+            <div v-show = "isClickToolBar && !isClickYearToolBar">
+                <div class = "toolbar">
+                    <div class="previous" @click="previousYear"><strong>&lt;</strong></div>
+                    <div class="current" @click = "chooseYear"><strong>{{ currentTime.year }}</strong></div>
+                    <div class="next" @click="nextYear"><strong>&gt;</strong></div>
+                </div>            
+                <div class = "day">
+                    <div class = "item2" v-for = "item of monthAbbre" :key = "item.id" :class = "{checked2: isCheckItem[monthAbbre.indexOf(item)]}" @click = "checkMonth(monthAbbre.indexOf(item))">{{ item }}</div>
                 </div>
             </div>
-            <router-link to = "/month" class = "router-link-active">hekko</router-link>
-            <router-view></router-view>
-        </div>
+
+            <div v-show = "isClickYearToolBar">
+                <div class = "toolbar">
+                    <div class="previous" @click="previousRangeYear"><strong>&lt;</strong></div>
+                    <div class="current"><strong>{{ rangeYear }}</strong></div>
+                    <div class="next" @click="nextRangeYear"><strong>&gt;</strong></div>
+                </div>            
+                <div class = "day">
+                    <div class = "item2" v-for = "item of yearList" :key = "item.id" :class = "[{disabled : item.disable}, {checked2: item.isThisYear}]" @click="checkYear(item)">{{ item.year }}</div>
+                </div>
+            </div>
+        </div></div>
     </div>
     <script src="./calender.js"></script>
 </body>
