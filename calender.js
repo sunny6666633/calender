@@ -1,33 +1,35 @@
-const Year = {template: '<div>year</div>'}
-const Month = {template: '<div>month</div>'}
-
-const routes = [
-    {path : '/year', component : Year},
-    {path : '/month', component : Month}
-]
-
-const router = VueRouter.createRouter({
-    history: VueRouter.createWebHashHistory(),
-    routes: routes 
-});
-
 const app = Vue.createApp({
     el: '#app',
-    router,
     data() {
         return {
             weekList: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
             currentTime: {},   // object for currenttime
+            today:{},
             calendarList: [],  
+            yearList: {},
             actualDate: new Date(),
             monthEnglish: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+            monthAbbre: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            isClickToolBar: false,
+            isClickYearToolBar: false,
+            isClickPicker: false,
+            isCheckItem:[],
+            isYear:[]
         }
     },
     computed: {
         currentDate() {
-            console.log("hihi");
             let { year, month } = this.currentTime;
             return `${this.getEnglishMonth(month)} ${year}`;
+        },
+
+        rangeYear(){
+            let a = this.currentTime.year % 10;
+            return `${this.currentTime.year-a}-${this.currentTime.year+(9-a)}`;
+        },
+
+        valueDate(){
+            return `${this.stringify(this.currentTime.year, this.currentTime.month, this.currentTime.date)}`;
         }
     },
     mounted() {
@@ -36,19 +38,38 @@ const app = Vue.createApp({
     methods: {
         init() {
             this.setCurrent();
+            this.setToday();
             this.calendarCreator();
         },
 
-        check(item){
+        checkDate(item){
             item.isChecked = !item.isChecked;
+            this.isClickPicker = !this.isClickPicker;
             for(ele of this.calendarList){
                 if(item != ele)
                     ele.isChecked = false;
+                else{
+                    this.currentTime.year = ele.year;
+                    this.currentTime.month = ele.month;
+                    this.currentTime.date = ele.date;
+                }
             }
         },
 
+        checkMonth(item){
+            this.currentTime.month = item;
+            this.correctCurrent();
+            this.calendarCreator();
+            this.isClickToolBar = !this.isClickToolBar;
+        },
+
+        checkYear(item){
+            this.currentTime.year = item.year;
+            this.isClickYearToolBar = !this.isClickYearToolBar;
+        },
+
         getDaysByMonth(year, month) {
-            return new Date(year, month + 1, 0).getDate(); //juage how much days on this month
+            return new Date(year, month+1, 0).getDate(); //juage how much days on this month
         },
 
         getFirstDayByMonths(year, month) {
@@ -56,7 +77,7 @@ const app = Vue.createApp({
         },
 
         getLastDayByMonth(year, month) {
-            return new Date(year, month + 1, 0).getDay(); //juage the last day of the month
+            return new Date(year, month, 0).getDay(); //juage the last day of the month
         },
 
         getEnglishMonth(indexMonth) {
@@ -68,19 +89,39 @@ const app = Vue.createApp({
         },
 
         previousMonth() {
-            this.currentTime.month--;
+            if(this.currentTime.month == 0){
+                this.previousYear();
+                this.currentTime.month = 11;
+            }
+            else
+                this.currentTime.month--;
             this.correctCurrent();
             this.calendarCreator();
+        },
+
+        previousYear() {
+            this.currentTime.year--;
+            this.isCheckItem[this.currentTime.month] = false;
         },
 
         nextMonth() {
-            this.currentTime.month++;
+            if(this.currentTime.month == 11){
+                this.nextYear();
+                this.currentTime.month = 0;
+            }
+            else
+                this.currentTime.month++;
             this.correctCurrent();
             this.calendarCreator();
         },
 
+        nextYear() {
+            this.currentTime.year++;
+            this.isCheckItem[this.currentTime.month] = false;
+        },
+
         stringify(year, month, date) {
-            let str = [year, this.getInt(month + 1), this.getInt(date)].join('-');
+            let str = [year, this.getInt(month+1), this.getInt(date)].join('-');
             return str;
         },
     
@@ -95,14 +136,22 @@ const app = Vue.createApp({
             }
         },
 
+        setToday(){
+            d = new Date();
+            let year = d.getFullYear();
+            let month = d.getMonth();
+            let date = d.getDate();
+            this.today = {
+                year,
+                month,
+                date
+            }
+        },
+
         correctCurrent() {
             let { year, month, date } = this.currentTime;
-
-            let maxDate = this.getDaysByMonth(year, month);
-            date = Math.min(maxDate, date);
-
-            let instance = new Date(year, month, date);
-            this.setCurrent(instance);
+            date = this.getDaysByMonth(year, month); 
+            this.currentTime = {year, month, date};
         },
 
         calendarCreator() {
@@ -110,10 +159,11 @@ const app = Vue.createApp({
             const millliSecond = 24 * 60 * 60 * 1000;
 
             let list = [];
-            let { year, month, date } = this.currentTime;
+            let {year, month} = this.currentTime;
 
             let firstDay = this.getFirstDayByMonths(year, month);
             let prefixDaysLen = firstDay;
+
             let begin = new Date(year, month, 1).getTime() - millliSecond * prefixDaysLen;
 
             while (count / 7 <= 5 || count % 7 != 0) {
@@ -129,14 +179,59 @@ const app = Vue.createApp({
                     disable: curMonth !== month,
                     value: this.stringify(curYear, curMonth, curDate),
                     isChecked : false,
-                    isToday:curMonth == month && curDate == date && curYear == year
+                    isToday:curMonth === this.today.month && curDate === this.today.date && curYear === this.today.year
                 });
                 begin += millliSecond;
             }
 
             this.calendarList = list;
+        },
+
+        chooseMonth(){
+            this.isClickToolBar = true;
+            for(let i = 0; i < 12; i++){
+                if(this.currentTime.month == i)
+                    this.isCheckItem.push(true);
+                else
+                    this.isCheckItem.push(false);
+            }   
+        },
+
+        chooseYear(){
+            this.isClickYearToolBar = true;
+            for(let i = 0; i < 12; i++){
+                if(this.currentTime.year == i)
+                    this.isYear.push(true);
+                else
+                    this.isYear.push(false);
+            }
+            let a = this.currentTime.year % 10;
+            let begin = this.currentTime.year - a;
+            for(i = begin - 1; i < begin + 11; i++){
+                this.yearList[i-begin+1] = {
+                    disable: i === begin-1 || i === begin+10,
+                    year: i,  
+                    isThisYear: i === this.today.year                  
+                }
+            }   
+        },
+
+        previousRangeYear(){
+            this.currentTime.year -= 10; 
+            for(i = 0; i < 12; i++){
+                this.yearList[i].year -= 10;    
+                this.yearList[i].isThisYear = false;
+            }
+        },
+
+        nextRangeYear(){
+            this.currentTime.year += 10;
+            for(i = 0; i < 12; i++){
+                this.yearList[i].year += 10; 
+                this.yearList[i].isThisYear = false;
+            }
         }
     },
 })
-app.use(router);
+
 app.mount('#app');
