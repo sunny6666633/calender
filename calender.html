@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>calendar</title>
+    <link rel="stylesheet" href="./calender.css">
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/vue-router@4"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="wrapper">
+            <div class="toolbar">
+                <div class="previous" @click="previousMonth"><strong>&lt;</strong></div>
+                <router-link to = "/year" class = "router-link-active">
+                    <div class="current"><strong>{{ currentDate }}</strong></div>
+                </router-link>
+                <div class="next" @click="nextMonth"><strong>&gt;</strong></div>
+            </div>
+            <div class="week">
+                <div class="week-item" v-for="item of weekList" :key="item.id">{{ item }}</div>
+            </div>
+            <div class="day">
+                <div class="item" v-for="(item, index) of calendarList" :key="item.id" :class="[item.disable ? 'disabled' : '', {today: item.isToday}, {checked: item.isChecked}]" @click = "check(item)">
+                    {{ item.date }}
+                </div>
+            </div>
+            <router-link to = "/month" class = "router-link-active">hekko</router-link>
+            <router-view></router-view>
+        </div>
+    </div>
+    <script src="./calender.js"></script>
+</body>
+
+</html>
